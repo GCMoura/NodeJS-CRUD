@@ -5,16 +5,19 @@ const fs = require('fs')
 
 server.use(express.json({ extends: true }))
 
+// Read database
 const readFile = () => {
     const content = fs.readFileSync('./data/db.json', 'utf-8')
     return JSON.parse(content)
 }
 
+// Create User
 const writeFile = (content) => {
     const updateFile = JSON.stringify(content)
     fs.writeFileSync('./data/db.json', updateFile, 'utf-8')
 }
 
+// Verify duplicity
 const verifyData = (flag, db, data) => {
     for(let i = 0; i < db.length; i++){
         if(db[i].name === data.name && db[i].email === data.email) {
@@ -25,11 +28,13 @@ const verifyData = (flag, db, data) => {
     return flag
 }
 
+// Read Database
 router.get('/', (req, res) => {
     const content = readFile()
     res.send(content)
 })
 
+// Create User
 router.post('/', (req, res) => {
     const { name, email, phone } = req.body
     const currentData = readFile()
@@ -49,9 +54,45 @@ router.post('/', (req, res) => {
     }
 })
 
+//Update User
 router.put('/:id', (req, res) => {
-    const {id} = req.params
-    console.log(id)
+    const { id } = req.params //return user id
+    
+    const { name, email, phone } = req.body // set new updates
+
+    const currentContent = readFile()
+
+    const selectedItem = currentContent.findIndex(item => item.id === id)
+
+    const { id: currentId, name: currentName, email: currentEmail, phone: currentPhone } = currentContent[selectedItem]
+
+    const updateUser = {
+        id: currentId,
+        name: name ? name : currentName,
+        email: email ? email : currentEmail,
+        phone: phone ? phone : currentPhone
+    }
+
+    currentContent[selectedItem] = updateUser
+
+    writeFile(currentContent)
+
+    res.send(updateUser)
+})
+
+//Delete User
+router.delete('/:id', (req, res) => {
+    const { id } = req.params //return user id
+
+    const currentContent = readFile()
+
+    const selectedItem = currentContent.findIndex(item => item.id === id)
+
+    currentContent.splice(selectedItem, 1)
+
+    writeFile(currentContent)
+
+    res.send(true)
 })
 
 server.use(router)
